@@ -101,19 +101,6 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_plane")
 text = "YZ Side"
 
-[node name="offset" type="HBoxContainer" parent="mc/tabs/tileset_settings" unique_id=2114699838]
-layout_mode = 2
-
-[node name="lbl_offset" type="Label" parent="mc/tabs/tileset_settings/offset" unique_id=34268165]
-layout_mode = 2
-text = "Offset"
-
-[node name="sb_offset" type="SpinBox" parent="mc/tabs/tileset_settings/offset" unique_id=1927364783]
-layout_mode = 2
-size_flags_horizontal = 3
-allow_greater = true
-allow_lesser = true
-
 [node name="HSeparator_plane" type="HSeparator" parent="mc/tabs/tileset_settings" unique_id=1379461620]
 layout_mode = 2
 
@@ -154,4 +141,3 @@ metadata/_tab_name = "Grid"
 [connection signal="pressed" from="mc/tabs/tileset_settings/plane/btn_xz" to="." method="_on_plane_xz_pressed"]
 [connection signal="pressed" from="mc/tabs/tileset_settings/plane/btn_xy" to="." method="_on_plane_xy_pressed"]
 [connection signal="pressed" from="mc/tabs/tileset_settings/plane/btn_yz" to="." method="_on_plane_yz_pressed"]
-[connection signal="value_changed" from="mc/tabs/tileset_settings/offset/sb_offset" to="." method="_on_offset_changed"]

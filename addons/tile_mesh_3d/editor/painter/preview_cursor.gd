@@ -9,6 +9,7 @@ extends MultiMeshInstance3D
 ## - Follow mouse position (snapped to grid)
 ## - Update mesh when tile selection or plane mode changes
 ## - Show/hide based on paint mode state
+## - React to grid position changes (WASD movement)
 
 var current_tile_key: Dictionary = {}
 var current_tileset: TileSet = null
@@ -44,6 +45,7 @@ func hide_preview() -> void:
 
 
 ## Sets preview position (already snapped by grid_manager)
+## NEW: Also accepts grid_position from GridManager for WASD movement
 func set_position_snapped(pos: Vector3) -> void:
 	var xform := Transform3D()
 	xform.origin = pos

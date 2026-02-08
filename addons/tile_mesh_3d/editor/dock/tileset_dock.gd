@@ -14,7 +14,6 @@ signal tile_selected(tile_key: Dictionary)
 @onready var _btn_xz: Button = $mc/tabs/tileset_settings/plane/btn_xz
 @onready var _btn_xy: Button = $mc/tabs/tileset_settings/plane/btn_xy
 @onready var _btn_yz: Button = $mc/tabs/tileset_settings/plane/btn_yz
-@onready var _offset_spin: SpinBox = $mc/tabs/tileset_settings/offset/sb_offset
 
 var show_grid: bool = true
 var grid_line_alpha: float = 0.25
@@ -60,10 +59,6 @@ func set_plane_info(plane_name: String, offset: float) -> void:
 
 	# Sync buttons without re-emitting signal
 	_sync_plane_buttons_from_name(plane_name)
-
-	# Sync offset spinner without re-emitting signal
-	if not is_equal_approx(_offset_spin.value, offset):
-		_offset_spin.set_value_no_signal(offset)
 
 
 func set_target(node: TileMesh3D) -> void:
@@ -148,19 +143,19 @@ func _on_offset_changed(value: float) -> void:
 func _on_plane_xz_pressed() -> void:
 	_current_plane = 0  # GridManager.PlaneMode.XZ
 	deprint("Plane button: XZ")
-	emit_signal("plane_changed", _current_plane, _offset_spin.value)
+	emit_signal("plane_changed", _current_plane, 0.0)
 
 
 func _on_plane_xy_pressed() -> void:
 	_current_plane = 1  # GridManager.PlaneMode.XY
 	deprint("Plane button: XY")
-	emit_signal("plane_changed", _current_plane, _offset_spin.value)
+	emit_signal("plane_changed", _current_plane, 0.0)
 
 
 func _on_plane_yz_pressed() -> void:
 	_current_plane = 2  # GridManager.PlaneMode.YZ
 	deprint("Plane button: YZ")
-	emit_signal("plane_changed", _current_plane, _offset_spin.value)
+	emit_signal("plane_changed", _current_plane, 0.0)
 
 
 func _on_source_selected(idx: int) -> void:

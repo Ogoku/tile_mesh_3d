@@ -57,8 +57,16 @@ func _exit_tree() -> void:
 
 
 func _forward_3d_gui_input(camera: Camera3D, event: InputEvent) -> int:
+	# NEW: Handle keyboard input for WASD grid movement
+	if event is InputEventKey and event.pressed and not event.echo:
+		var result := _handle_keyboard_input(event, camera)
+		if result != EditorPlugin.AFTER_GUI_INPUT_PASS:
+			return result
+	
+	# Existing painter tool input
 	if _painter_tool != null:
 		return _painter_tool.forward_3d_gui_input(camera, event)
+	
 	return EditorPlugin.AFTER_GUI_INPUT_PASS
 
 
@@ -143,10 +151,96 @@ func _on_tile_selected(tile_key: Dictionary) -> void:
 		_painter_tool.set_current_tile(tile_key)
 
 
+# ============================================================================
+# NEW: Keyboard Input Handling for Grid Movement
+# ============================================================================
+
+## Handles WASD keyboard input for grid movement
+func _handle_keyboard_input(event: InputEventKey, camera: Camera3D) -> int:
+	if not _painter_tool or not _painter_tool._is_active:
+		return EditorPlugin.AFTER_GUI_INPUT_PASS
+	
+	# Check UI Focus (prevents WASD when typing in LineEdit/SpinBox)
+	var focused = get_editor_interface().get_base_control().get_viewport().gui_get_focus_owner()
+	if focused and (focused is LineEdit or focused is SpinBox or focused is TextEdit):
+		return EditorPlugin.AFTER_GUI_INPUT_PASS
+	
+	var gm := _painter_tool.get_grid_manager()
+	if not gm:
+		return EditorPlugin.AFTER_GUI_INPUT_PASS
+	
+	var shift_pressed := event.shift_pressed
+	var move_vector := Vector3.ZERO
+	var basis := camera.global_transform.basis
+	
+	# Determine movement direction
+	match event.keycode:
+		KEY_W:
+			if shift_pressed:
+				move_vector = _snap_to_cardinal(basis.y)       # Up
+			else:
+				move_vector = _snap_to_cardinal(-basis.z)      # Forward
+		
+		KEY_S:
+			if shift_pressed:
+				move_vector = _snap_to_cardinal(-basis.y)      # Down
+			else:
+				move_vector = _snap_to_cardinal(basis.z)       # Backward
+		
+		KEY_A:
+			move_vector = _snap_to_cardinal(-basis.x)          # Left
+		
+		KEY_D:
+			move_vector = _snap_to_cardinal(basis.x)           # Right
+	
+	# Execute movement
+	if move_vector.length_squared() > 0.0:
+		gm.move_grid_position(move_vector)
+		
+		# Update preview cursor position to match grid
+		if _painter_tool._preview_cursor:
+			_painter_tool._preview_cursor.set_position_snapped(gm.grid_position)
+		
+		deprint("Grid moved to: %s" % gm.grid_position)
+		return EditorPlugin.AFTER_GUI_INPUT_STOP
+	
+	return EditorPlugin.AFTER_GUI_INPUT_PASS
+
+
+## Snaps a direction vector to nearest cardinal direction (+/- X/Y/Z)
+func _snap_to_cardinal(direction: Vector3) -> Vector3:
+	var abs_x := abs(direction.x)
+	var abs_y := abs(direction.y)
+	var abs_z := abs(direction.z)
+	
+	if abs_x > abs_y and abs_x > abs_z:
+		return Vector3(sign(direction.x), 0, 0)
+	elif abs_y > abs_z:
+		return Vector3(0, sign(direction.y), 0)
+	else:
+		return Vector3(0, 0, sign(direction.z))
+
+
+# ============================================================================
+# ProjectSettings Registration
+# ============================================================================
+
 func _register_project_settings() -> void:
+	# General
 	ProjectSettings.set_setting("tile_mesh_3d/general/debug", false)
 	ProjectSettings.set_initial_value("tile_mesh_3d/general/debug", false)
-
+	
+	# Grid
+	ProjectSettings.set_setting("tile_mesh_3d/grid/show_grid", true)
+	ProjectSettings.set_initial_value("tile_mesh_3d/grid/show_grid", true)
+	
+	ProjectSettings.set_setting("tile_mesh_3d/grid/line_color", Color(1.0, 1.0, 1.0, 0.25))
+	ProjectSettings.set_initial_value("tile_mesh_3d/grid/line_color", Color(1.0, 1.0, 1.0, 0.25))
+	
+	ProjectSettings.set_setting("tile_mesh_3d/grid/extent", 20)
+	ProjectSettings.set_initial_value("tile_mesh_3d/grid/extent", 20)
+	
+	# Painter
 	ProjectSettings.set_setting("tile_mesh_3d/painter/default_grid_size", 1.0)
 	ProjectSettings.set_initial_value("tile_mesh_3d/painter/default_grid_size", 1.0)
 

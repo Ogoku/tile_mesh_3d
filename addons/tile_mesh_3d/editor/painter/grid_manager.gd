@@ -9,10 +9,12 @@ extends RefCounted
 ## - Grid snapping calculations
 ## - Raycast plane generation for mouse intersection
 ## - Quad vertex/normal generation per plane mode
-## - Grid line rendering (Phase 2: ImmediateMesh)
+## - Grid position tracking for WASD movement
+## - Simple plane detection based on camera direction
 
 signal plane_changed(new_plane: PlaneMode)
 signal offset_changed(new_offset: float)
+signal grid_position_changed(new_position: Vector3)
 
 enum PlaneMode { XZ, XY, YZ }
 
@@ -21,13 +23,12 @@ var grid_size: float = 1.0
 var plane_offset: float = 0.0  # Y-offset for XZ, Z-offset for XY, X-offset for YZ
 var grid_visible: bool = false
 
-# Grid rendering (Phase 2)
-var _grid_mesh: ImmediateMesh
-var _grid_material: StandardMaterial3D
+# NEW: Grid position for WASD movement (world space)
+var grid_position: Vector3 = Vector3.ZERO
 
 
 func _init() -> void:
-	_setup_grid_rendering()
+	pass
 
 
 ## Adjusts plane offset by delta (typically ±grid_size)
@@ -35,6 +36,30 @@ func adjust_offset(delta: float) -> void:
 	plane_offset += delta
 	deprint("Offset adjusted to %f" % plane_offset)
 	emit_signal("offset_changed", plane_offset)
+
+
+## NEW: Detects which plane the camera is looking at
+## Returns the plane that's most perpendicular to camera forward vector
+func detect_plane_from_camera(camera: Camera3D) -> PlaneMode:
+	if not camera:
+		return current_plane
+	
+	var camera_forward := -camera.global_transform.basis.z
+	var abs_x := abs(camera_forward.x)
+	var abs_y := abs(camera_forward.y)
+	var abs_z := abs(camera_forward.z)
+	
+	# Y-axis dominant (looking up/down) → XZ plane (floor/ceiling)
+	if abs_y > abs_x and abs_y > abs_z:
+		return PlaneMode.XZ
+	
+	# X-axis dominant (looking left/right) → YZ plane (side wall)
+	elif abs_x > abs_y and abs_x > abs_z:
+		return PlaneMode.YZ
+	
+	# Z-axis dominant (looking forward/back) → XY plane (front/back wall)
+	else:
+		return PlaneMode.XY
 
 
 ## Returns human-readable plane name for UI/debug
@@ -106,15 +131,27 @@ func get_quad_vertices(tile_size: float) -> PackedVector3Array:
 
 
 ## Returns mathematical Plane for raycasting based on current plane mode
+## The plane is offset by both plane_offset AND grid_position (for WASD movement)
 func get_raycast_plane() -> Plane:
 	match current_plane:
 		PlaneMode.XZ:
-			return Plane(Vector3.UP, plane_offset)
+			# XZ plane (floor/ceiling) - offset by Y component of grid_position
+			return Plane(Vector3.UP, plane_offset + grid_position.y)
 		PlaneMode.XY:
-			return Plane(Vector3.BACK, plane_offset)
+			# XY plane (front/back wall) - offset by Z component of grid_position
+			return Plane(Vector3.BACK, plane_offset + grid_position.z)
 		PlaneMode.YZ:
-			return Plane(Vector3.RIGHT, plane_offset)
+			# YZ plane (side wall) - offset by X component of grid_position
+			return Plane(Vector3.RIGHT, plane_offset + grid_position.x)
 	return Plane()
+
+
+## NEW: Moves grid position by offset (for WASD movement)
+## Offset should be a cardinal direction (e.g. Vector3(1,0,0) for right)
+func move_grid_position(offset: Vector3) -> void:
+	grid_position += offset * grid_size
+	deprint("Grid position moved to: %s" % grid_position)
+	emit_signal("grid_position_changed", grid_position)
 
 
 ## Performs raycast from camera through mouse position against current plane
@@ -154,25 +191,24 @@ func set_offset(offset: float) -> void:
 
 ## Switches to specified plane mode
 func set_plane(mode: PlaneMode, offset: float = 0.0) -> void:
+	var old_plane := current_plane
 	current_plane = mode
 	plane_offset = offset
-	deprint("Plane switched to %s (offset: %f)" % [get_plane_name(), offset])
-	emit_signal("plane_changed", mode)
+	
+	if old_plane != mode:
+		deprint("Plane switched to %s (offset: %f)" % [get_plane_name(), offset])
+		emit_signal("plane_changed", mode)
 
 
-## Shows grid visualization at specified center point
-## Phase 2: ImmediateMesh implementation
-func show_grid(camera: Camera3D, center: Vector3) -> void:
-	grid_visible = true
-	# TODO: Phase 2 - Implement ImmediateMesh grid rendering
-	deprint("Grid show requested (not yet implemented)")
-
-
-## Hides grid visualization
-func hide_grid() -> void:
-	grid_visible = false
-	# TODO: Phase 2 - Clear ImmediateMesh
-	deprint("Grid hide requested (not yet implemented)")
+## NEW: Updates plane based on camera direction (auto-detection)
+func update_plane_from_camera(camera: Camera3D) -> bool:
+	var detected_plane := detect_plane_from_camera(camera)
+	
+	if detected_plane != current_plane:
+		set_plane(detected_plane, plane_offset)
+		return true  # Plane changed
+	
+	return false  # No change
 
 
 ## Snaps world position to grid based on current grid_size
@@ -185,17 +221,18 @@ func snap_to_grid(pos: Vector3) -> Vector3:
 
 
 ## Snaps position to grid and locks to current plane
+## IMPORTANT: Must include grid_position offset to respect WASD movement
 func snap_to_plane(pos: Vector3) -> Vector3:
 	var snapped := snap_to_grid(pos)
 
-	# Lock the axis perpendicular to current plane
+	# Lock the axis perpendicular to current plane, including grid_position offset
 	match current_plane:
 		PlaneMode.XZ:
-			snapped.y = plane_offset
+			snapped.y = plane_offset + grid_position.y  # FIX: Include grid_position.y
 		PlaneMode.XY:
-			snapped.z = plane_offset
+			snapped.z = plane_offset + grid_position.z  # FIX: Include grid_position.z
 		PlaneMode.YZ:
-			snapped.x = plane_offset
+			snapped.x = plane_offset + grid_position.x  # FIX: Include grid_position.x
 
 	return snapped
 
@@ -203,12 +240,6 @@ func snap_to_plane(pos: Vector3) -> Vector3:
 ## Internal: Snaps single axis value to grid
 func _snap_axis(value: float) -> float:
 	return floor(value / grid_size) * grid_size
-
-
-## Internal: Setup grid rendering resources (Phase 2)
-func _setup_grid_rendering() -> void:
-	# TODO: Phase 2
-	pass
 
 
 func deprint(msg: String) -> void:
