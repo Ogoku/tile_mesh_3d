@@ -5,16 +5,16 @@ extends Control
 signal plane_changed(plane_mode: int, offset: float)
 signal tile_selected(tile_key: Dictionary)
 
-@onready var _target_label: Label = $mc/vbox/header/lbl_target
-@onready var _source_option: OptionButton = $mc/vbox/source/ob_source_option
-@onready var _alt_spin: SpinBox = $mc/vbox/source/sb_alt_spin
-@onready var _atlas_view: TextureRect = $mc/vbox/atlas/content/atlas_view
-@onready var _selected_label: Label = $mc/vbox/info/lbl_selected
-@onready var _status_label: Label = $mc/vbox/info/lbl_status
-@onready var _btn_xz: Button = $mc/vbox/plane/btn_xz
-@onready var _btn_xy: Button = $mc/vbox/plane/btn_xy
-@onready var _btn_yz: Button = $mc/vbox/plane/btn_yz
-@onready var _offset_spin: SpinBox = $mc/vbox/offset/sb_offset
+@onready var _target_label: Label = $mc/tabs/tileset_settings/header/lbl_target
+@onready var _source_option: OptionButton = $mc/tabs/tileset_settings/header/btn_refresh
+@onready var _alt_spin: SpinBox = $mc/tabs/tileset_settings/source/sb_alt_spin
+@onready var _atlas_view: TextureRect = $mc/tabs/tileset_settings/atlas/content/atlas_view
+@onready var _selected_label: Label = $mc/tabs/tileset_settings/info/lbl_selected
+@onready var _status_label: Label = $mc/tabs/tileset_settings/info/lbl_status
+@onready var _btn_xz: Button = $mc/tabs/tileset_settings/plane/btn_xz
+@onready var _btn_xy: Button = $mc/tabs/tileset_settings/plane/btn_xy
+@onready var _btn_yz: Button = $mc/tabs/tileset_settings/plane/btn_yz
+@onready var _offset_spin: SpinBox = $mc/tabs/tileset_settings/offset/sb_offset
 
 var show_grid: bool = true
 var grid_line_alpha: float = 0.25
