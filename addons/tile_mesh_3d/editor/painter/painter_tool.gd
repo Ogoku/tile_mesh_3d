@@ -11,6 +11,7 @@ extends RefCounted
 ## - Update preview cursor position
 ## - Generate tile meshes with UV mapping and collision
 ## - Switch placement plane (XZ/XY/YZ) and adjust offset
+## - NEW: Automatic plane switching based on camera direction
 
 signal tile_placed(mesh: MeshInstance3D)
 signal tile_removed(mesh: MeshInstance3D)
@@ -41,6 +42,8 @@ func activate(target: TileMesh3D, tile_key: Dictionary, undo_redo: EditorUndoRed
 	_grid_manager = GridManager.new()
 	_grid_manager.set_grid_size_from_node(target)
 	_grid_manager.set_plane(GridManager.PlaneMode.XZ)
+	_grid_manager.plane_changed.connect(_on_plane_changed)
+	_grid_manager.grid_position_changed.connect(_on_grid_position_changed)
 
 	# Initialize preview cursor
 	_preview_cursor = PreviewCursor.new()
@@ -79,8 +82,12 @@ func deactivate() -> void:
 		_preview_cursor.queue_free()
 		_preview_cursor = null
 
-	# Cleanup grid manager
+	# Disconnect signals
 	if _grid_manager != null:
+		if _grid_manager.plane_changed.is_connected(_on_plane_changed):
+			_grid_manager.plane_changed.disconnect(_on_plane_changed)
+		if _grid_manager.grid_position_changed.is_connected(_on_grid_position_changed):
+			_grid_manager.grid_position_changed.disconnect(_on_grid_position_changed)
 		_grid_manager = null
 
 	_target = null
@@ -88,13 +95,16 @@ func deactivate() -> void:
 	deprint("Painter tool deactivated")
 
 
-## Handles 3D viewport input events
+## Handles 3D viewport input events (mouse, keyboard)
 ## Returns EditorPlugin.AFTER_GUI_INPUT_STOP if handled, else AFTER_GUI_INPUT_PASS
 func forward_3d_gui_input(camera: Camera3D, event: InputEvent) -> int:
 	if not _is_active or _target == null:
 		return EditorPlugin.AFTER_GUI_INPUT_PASS
 
 	_camera = camera
+
+	# NEW: Auto-detect and switch plane based on camera direction
+	_auto_update_plane(camera)
 
 	# Keyboard input - plane switching and offset
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -142,6 +152,66 @@ func set_current_tile(tile_key: Dictionary) -> void:
 
 	if _preview_cursor != null and _target != null and _target.tileset != null:
 		_preview_cursor.update_preview(tile_key, _target.tileset, _grid_manager.current_plane)
+
+
+## NEW: Automatically detects and switches plane based on camera direction
+func _auto_update_plane(camera: Camera3D) -> void:
+	if not _grid_manager:
+		return
+
+	# Detect which plane the camera is looking at
+	var plane_changed := _grid_manager.update_plane_from_camera(camera)
+
+	if plane_changed:
+		# Refresh preview for new plane orientation
+		_refresh_preview()
+
+		# Emit signal for dock UI update
+		_emit_plane_info()
+
+		deprint("Auto-switched to plane: %s" % _grid_manager.get_plane_name())
+
+
+## Internal: Refreshes preview mesh (called after plane changes)
+func _refresh_preview() -> void:
+	if _preview_cursor == null or _current_tile_key.is_empty():
+		return
+
+	if _target == null or _target.tileset == null:
+		return
+
+	_preview_cursor.update_preview(
+		_current_tile_key,
+		_target.tileset,
+		_grid_manager.current_plane
+	)
+
+
+## Internal: Emits plane info for UI status display
+func _emit_plane_info() -> void:
+	if _grid_manager != null:
+		emit_signal("plane_info_changed", _grid_manager.get_plane_name(), _grid_manager.plane_offset)
+
+
+## Internal: Signal handler for grid position changes (WASD movement)
+func _on_grid_position_changed(new_position: Vector3) -> void:
+	if _preview_cursor == null:
+		return
+
+	# Update preview cursor to follow grid position
+	var snapped_pos := _grid_manager.snap_to_plane(new_position)
+	_preview_cursor.set_position_snapped(snapped_pos)
+
+
+## Internal: Signal handler for plane changes
+func _on_plane_changed(new_plane: GridManager.PlaneMode) -> void:
+	deprint("Plane changed to: %s" % _grid_manager.get_plane_name())
+
+	# Refresh preview for new plane orientation
+	_refresh_preview()
+
+	# Emit signal for dock UI update
+	_emit_plane_info()
 
 
 ## Internal: Applies collision shape to tile if physics layer exists
@@ -277,12 +347,6 @@ func _create_tile_mesh(tile_key: Dictionary) -> MeshInstance3D:
 	return mesh_instance
 
 
-## Internal: Emits plane info for UI status display
-func _emit_plane_info() -> void:
-	if _grid_manager != null:
-		emit_signal("plane_info_changed", _grid_manager.get_plane_name(), _grid_manager.plane_offset)
-
-
 ## Internal: Finds tile mesh at specified position
 func _get_tile_at_position(world_pos: Vector3) -> MeshInstance3D:
 	var snap_threshold := _grid_manager.grid_size * 0.1  # 10% tolerance
@@ -410,12 +474,6 @@ func _place_tile(world_pos: Vector3) -> void:
 	_undo_redo.commit_action()
 
 	emit_signal("tile_placed", mesh_instance)
-
-
-## Internal: Refreshes preview cursor mesh for new plane orientation
-func _refresh_preview() -> void:
-	if _preview_cursor != null and not _current_tile_key.is_empty() and _target != null and _target.tileset != null:
-		_preview_cursor.update_preview(_current_tile_key, _target.tileset, _grid_manager.current_plane)
 
 
 ## Internal: Removes tile at world position with undo/redo support
