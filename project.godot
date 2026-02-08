@@ -21,7 +21,7 @@ project/assembly_name="tile_mesh_3d"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/QuickPluginManager/plugin.cfg", "res://addons/project-info-exporter/plugin.cfg", "res://addons/project-time-tracker/plugin.cfg", "res://addons/script-ide/plugin.cfg")
+enabled=PackedStringArray("res://addons/QuickPluginManager/plugin.cfg", "res://addons/project-time-tracker/plugin.cfg", "res://addons/script-ide/plugin.cfg", "res://addons/tile_mesh_3d/plugin.cfg")
 
 [physics]
 
@@ -38,3 +38,7 @@ afk/afk_timer=300
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+
+[tile_mesh_3d]
+
+general/debug=true

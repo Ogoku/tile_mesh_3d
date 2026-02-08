@@ -263,7 +263,7 @@ func _create_tile_mesh(tile_key: Dictionary) -> MeshInstance3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = texture
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST  # Pixel-art
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED  # Show both sides for walls
+	mat.cull_mode = BaseMaterial3D.CULL_BACK
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
 	mesh.surface_set_material(0, mat)
