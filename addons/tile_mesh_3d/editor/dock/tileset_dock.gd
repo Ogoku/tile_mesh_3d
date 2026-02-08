@@ -6,7 +6,7 @@ signal plane_changed(plane_mode: int, offset: float)
 signal tile_selected(tile_key: Dictionary)
 
 @onready var _target_label: Label = $mc/tabs/tileset_settings/header/lbl_target
-@onready var _source_option: OptionButton = $mc/tabs/tileset_settings/header/btn_refresh
+@onready var _source_option: OptionButton = $mc/tabs/tileset_settings/source/ob_source_option
 @onready var _alt_spin: SpinBox = $mc/tabs/tileset_settings/source/sb_alt_spin
 @onready var _atlas_view: TextureRect = $mc/tabs/tileset_settings/atlas/content/atlas_view
 @onready var _selected_label: Label = $mc/tabs/tileset_settings/info/lbl_selected
