@@ -1,0 +1,143 @@
+[gd_scene format=3 uid="uid://c8jbxgp4ylmt2"]
+
+[ext_resource type="Script" uid="uid://bd6off84i2ffb" path="res://addons/tile_mesh_3d/editor/dock/tileset_dock.gd" id="1_5jd8b"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_plane"]
+resource_name = "plane_group"
+
+[node name="TilesetDock" type="Control" unique_id=361833128]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5jd8b")
+
+[node name="mc" type="MarginContainer" parent="." unique_id=1464708636]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="vbox" type="VBoxContainer" parent="mc" unique_id=1765744998]
+layout_mode = 2
+
+[node name="header" type="HBoxContainer" parent="mc/vbox" unique_id=1842906718]
+layout_mode = 2
+
+[node name="lbl_target" type="Label" parent="mc/vbox/header" unique_id=904150478]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Target: (none)"
+text_overrun_behavior = 3
+
+[node name="btn_refresh" type="Button" parent="mc/vbox/header" unique_id=789363718]
+layout_mode = 2
+text = "↻"
+
+[node name="source" type="HBoxContainer" parent="mc/vbox" unique_id=1333478849]
+layout_mode = 2
+
+[node name="lbl_source" type="Label" parent="mc/vbox/source" unique_id=1967253875]
+layout_mode = 2
+text = "Source"
+
+[node name="ob_source_option" type="OptionButton" parent="mc/vbox/source" unique_id=1774371958]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="lbl_alt" type="Label" parent="mc/vbox/source" unique_id=722620263]
+layout_mode = 2
+text = "Alt"
+
+[node name="sb_alt_spin" type="SpinBox" parent="mc/vbox/source" unique_id=91842979]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator0" type="HSeparator" parent="mc/vbox" unique_id=1029780663]
+layout_mode = 2
+
+[node name="plane" type="HBoxContainer" parent="mc/vbox" unique_id=1755818224]
+layout_mode = 2
+
+[node name="lbl_plane" type="Label" parent="mc/vbox/plane" unique_id=25486476]
+layout_mode = 2
+text = "Plane"
+
+[node name="btn_xz" type="Button" parent="mc/vbox/plane" unique_id=1889580228]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_plane")
+text = "XZ Floor"
+
+[node name="btn_xy" type="Button" parent="mc/vbox/plane" unique_id=862966549]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_group = SubResource("ButtonGroup_plane")
+text = "XY Wall"
+
+[node name="btn_yz" type="Button" parent="mc/vbox/plane" unique_id=74089366]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_group = SubResource("ButtonGroup_plane")
+text = "YZ Side"
+
+[node name="offset" type="HBoxContainer" parent="mc/vbox" unique_id=2114699838]
+layout_mode = 2
+
+[node name="lbl_offset" type="Label" parent="mc/vbox/offset" unique_id=34268165]
+layout_mode = 2
+text = "Offset"
+
+[node name="sb_offset" type="SpinBox" parent="mc/vbox/offset" unique_id=1927364783]
+layout_mode = 2
+size_flags_horizontal = 3
+allow_greater = true
+allow_lesser = true
+
+[node name="HSeparator_plane" type="HSeparator" parent="mc/vbox" unique_id=1379461620]
+layout_mode = 2
+
+[node name="atlas" type="ScrollContainer" parent="mc/vbox" unique_id=1373964931]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="content" type="VBoxContainer" parent="mc/vbox/atlas" unique_id=1347481049]
+layout_mode = 2
+
+[node name="atlas_view" type="TextureRect" parent="mc/vbox/atlas/content" unique_id=1107668395]
+layout_mode = 2
+stretch_mode = 2
+
+[node name="HSeparator1" type="HSeparator" parent="mc/vbox" unique_id=551952738]
+layout_mode = 2
+
+[node name="info" type="VBoxContainer" parent="mc/vbox" unique_id=375222421]
+layout_mode = 2
+
+[node name="lbl_selected" type="Label" parent="mc/vbox/info" unique_id=1136632712]
+layout_mode = 2
+text = "Selected: (none)"
+text_overrun_behavior = 3
+
+[node name="lbl_status" type="Label" parent="mc/vbox/info" unique_id=2100830739]
+layout_mode = 2
+text = "Select a TileMesh3D node to begin."
+text_overrun_behavior = 3
+
+[connection signal="pressed" from="mc/vbox/header/btn_refresh" to="." method="_refresh_atlas_view"]
+[connection signal="pressed" from="mc/vbox/plane/btn_xz" to="." method="_on_plane_xz_pressed"]
+[connection signal="pressed" from="mc/vbox/plane/btn_xy" to="." method="_on_plane_xy_pressed"]
+[connection signal="pressed" from="mc/vbox/plane/btn_yz" to="." method="_on_plane_yz_pressed"]
+[connection signal="value_changed" from="mc/vbox/offset/sb_offset" to="." method="_on_offset_changed"]
